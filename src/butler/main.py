@@ -12,6 +12,7 @@ from butler import brain
 from butler import tasks   # Option A: Database
 from butler import netsec  # Option B: Port Scanner
 from butler import voice   # Option C: Text-to-Speech
+from butler import gitview # Option D: Git History Viewer
 
 def main(argv: Sequence[str] = None) -> int:
     # 1. Initialize the Database immediately
@@ -79,6 +80,10 @@ def main(argv: Sequence[str] = None) -> int:
     speak_parser.add_argument("text", help="What to say")
     speak_parser.add_argument("--voice", default="Samantha", help="Voice name (e.g. Fred, Alex)")
 
+    # 9. GitView (Git History Viewer) - NEW
+    git_parser = subparsers.add_parser("gitview", help="View git history")
+    git_parser.add_argument("--limit", type=int, default=10, help="Number of commits to show")
+
     # --- PARSING ---
     args = parser.parse_args(argv)
 
@@ -96,6 +101,8 @@ def main(argv: Sequence[str] = None) -> int:
         briefing.get_top_stories(args.limit, args.read) # Pass the new flag
     elif args.command == "speak":
         voice.speak(args.text, args.voice)
+    elif args.command == "gitview":
+        gitview.get_git_history(args.limit)
 
     # Memory Routing
     elif args.command == "remember":

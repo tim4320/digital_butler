@@ -1,9 +1,15 @@
 README.md
 pyproject.toml
 src/butler/__init__.py
+src/butler/brain.py
+src/butler/briefing.py
+src/butler/gitview.py
 src/butler/main.py
+src/butler/netsec.py
 src/butler/system.py
+src/butler/tasks.py
 src/butler/tidy.py
+src/butler/voice.py
 src/butler/web.py
 src/digital_butler.egg-info/PKG-INFO
 src/digital_butler.egg-info/SOURCES.txt
