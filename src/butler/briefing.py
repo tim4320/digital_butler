@@ -1,50 +1,44 @@
 import requests
 from bs4 import BeautifulSoup
-import logging
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
+
+console = Console()
 
 def get_top_stories(limit: int = 5) -> None:
-    """
-    Fetches the top stories from Hacker News.
-    """
     url = "https://news.ycombinator.com/"
 
-    logging.info(f"📰 Fetching daily briefing from {url}...")
+    with console.status("[bold yellow]Fetching intelligence from the web..."):
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code != 200:
+                console.print(f"[bold red]❌ Error: HTTP {response.status_code}")
+                return
 
-    try:
-        response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.text, "html.parser")
+            story_spans = soup.select(".titleline > a")
 
-        if response.status_code != 200:
-            print(f"❌ Error: Could not fetch news (Status {response.status_code})")
-            return
+            # Build a Markdown string
+            md_content = ""
 
-        # Parse the HTML
-        # 'html.parser' is built-in to Python, so no extra install needed for the parser engine
-        soup = BeautifulSoup(response.text, "html.parser")
+            for i, story in enumerate(story_spans[:limit], 1):
+                title = story.get_text()
+                raw_link = story['href']
 
-        # --- THE HARD PART (Finding the data) ---
-        # On Hacker News, titles are in a <span> with class "titleline"
-        # We use CSS selectors to find them.
-        story_spans = soup.select(".titleline > a")
+                # Link Logic
+                if raw_link.startswith("http"):
+                    link = raw_link
+                else:
+                    link = f"https://news.ycombinator.com/{raw_link}"
 
-        print(f"\n☕ --- DAILY BRIEFING ({limit} Stories) --- ☕")
+                # Add to markdown string
+                md_content += f"**{i}. {title}**\n"
+                md_content += f"[link={link}]🔗 Click to Open[/link]\n\n"
 
-        # Loop through and print the first 'limit' items
-        for i, story in enumerate(story_spans[:limit], 1):
-            title = story.get_text()
-            raw_link = story['href'] # <--- Get the raw link first
+            # Render it nicely
+            md = Markdown(md_content)
+            console.print(Panel(md, title="📰 DAILY BRIEFING", border_style="yellow"))
 
-            # --- THE FIX ---
-            if raw_link.startswith("http"):
-                link = raw_link
-            else:
-                # It's an internal link, prepend the domain
-                link = f"https://news.ycombinator.com/{raw_link}"
-            # ----------------
-
-            print(f"{i}. {title}")
-            print(f"   🔗 {link}")
-            print("")
-
-    except Exception as e:
-        logging.error(f"Scraping failed: {e}")
-        print("❌ Error: Could not read the news today.")
+        except Exception as e:
+            console.print(f"[bold red]❌ Critical Failure:[/bold red] {e}")

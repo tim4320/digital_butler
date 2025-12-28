@@ -1,57 +1,63 @@
 import psutil
-import logging
-from typing import Dict
-from butler import briefing
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich.layout import Layout
+
+# Initialize the Rich Console
+console = Console()
 
 def report_status() -> None:
     """
-    Gather system statistics and print a health report.
+    Gather system statistics and print a cyberpunk-style dashboard.
     """
-    logging.info("🔎 Gathering system vitals...")
+    # Create a loading spinner while we calculate CPU (looks cool)
+    with console.status("[bold green]Scanning hardware vitals...", spinner="dots"):
+        # 1. Gather Data
+        cpu_percent = psutil.cpu_percent(interval=1)
 
-    # 1. CPU Usage
-    # interval=1 means "measure for 1 second" to get an accurate average
-    cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        total_mem_gb = memory.total / (1024 ** 3)
+        used_mem_gb = memory.used / (1024 ** 3)
 
-    # 2. Memory (RAM) Usage
-    memory = psutil.virtual_memory()
-    total_mem_gb = _bytes_to_gb(memory.total)
-    used_mem_gb = _bytes_to_gb(memory.used)
-    mem_percent = memory.percent
+        disk = psutil.disk_usage('/')
+        total_disk_gb = disk.total / (1024 ** 3)
+        free_disk_gb = disk.free / (1024 ** 3)
 
-    # 3. Disk Usage
-    disk = psutil.disk_usage('/')
-    total_disk_gb = _bytes_to_gb(disk.total)
-    free_disk_gb = _bytes_to_gb(disk.free)
-    disk_percent = disk.percent
+    # 2. Build the CPU/RAM Table
+    table = Table(title="System Vital Signs", box=None) # box=None makes it look cleaner
 
-    # 4. The Output (The Dashboard)
-    print("\n📊 --- SYSTEM HEALTH REPORT --- 📊")
+    table.add_column("Component", justify="right", style="cyan", no_wrap=True)
+    table.add_column("Usage", style="magenta")
+    table.add_column("Details", justify="left", style="green")
 
-    # CPU
-    _print_bar("CPU Usage", cpu_percent)
+    # Add Rows
+    # We use a helper function to determine color based on load
+    cpu_color = "[green]" if cpu_percent < 50 else "[red]"
+    table.add_row(
+        "CPU Core",
+        f"{cpu_color}{cpu_percent}%",
+        _get_bar(cpu_percent)
+    )
 
-    # Memory
-    print(f"Memory:     {used_mem_gb:.2f} GB / {total_mem_gb:.2f} GB ({mem_percent}%)")
-    _print_bar("RAM Usage", mem_percent)
+    mem_color = "[green]" if memory.percent < 70 else "[red]"
+    table.add_row(
+        "Memory (RAM)",
+        f"{mem_color}{memory.percent}%",
+        f"{used_mem_gb:.1f}GB / {total_mem_gb:.1f}GB"
+    )
 
-    # Disk
-    print(f"Disk (Main): {free_disk_gb:.2f} GB Free / {total_disk_gb:.2f} GB Total")
-    _print_bar("Disk Usage", disk_percent)
-    print("--------------------------------")
+    table.add_row(
+        "Main Disk",
+        f"{disk.percent}%",
+        f"{free_disk_gb:.1f}GB Free"
+    )
 
-def _bytes_to_gb(bytes_value: int) -> float:
-    """Helper to convert raw bytes to GB."""
-    return bytes_value / (1024 ** 3)
+    # 3. Print the Result inside a Panel
+    console.print(Panel(table, title="[bold blue]DIGITAL BUTLER v1.0", subtitle="Authorized Access Only"))
 
-def _print_bar(label: str, percent: float, width: int = 20) -> None:
-    """
-    Draws a simple ASCII progress bar.
-    Example: CPU Usage [#####.......] 45.0%
-    """
-    # Calculate how many hashes (#) to draw based on percentage
-    filled_length = int(width * percent // 100)
-    bar = '█' * filled_length + '-' * (width - filled_length)
-
-    # Determine color (conceptually) - generic print for now
-    print(f"{label:<12} [{bar}] {percent}%")
+def _get_bar(percent, length=20):
+    """Simple helper to return a visual bar string"""
+    filled = int(length * percent // 100)
+    bar = "█" * filled + "░" * (length - filled)
+    return f"[{bar}]"

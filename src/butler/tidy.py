@@ -1,48 +1,61 @@
+import os
 import shutil
-import logging # <--- NEW
 from pathlib import Path
-from typing import Dict, List
+from rich.console import Console
+from rich.progress import track
 
-# (Keep your EXTENSION_MAP here...)
-EXTENSION_MAP: Dict[str, List[str]] = {
-    "Images": [".jpg", ".jpeg", ".png", ".gif", ".svg", ".heic"],
-    "Documents": [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".csv"],
-    "Archives": [".zip", ".tar", ".gz", ".rar", ".7z"],
-    "Installers": [".exe", ".msi", ".dmg", ".pkg", ".deb"],
-    "Code": [".py", ".js", ".html", ".css", ".java", ".cpp"]
-}
+console = Console()
 
-def organize_directory(directory_path: str) -> None:
-    path = Path(directory_path)
+def organize_directory(path_str: str) -> None:
+    """
+    Organizes files into subdirectories based on extensions.
+    Now with a progress bar!
+    """
+    path = Path(path_str)
 
     if not path.exists():
-        # ERROR level for actual problems
-        logging.error(f"❌ Error: The path '{directory_path}' does not exist.")
+        console.print(f"[bold red]❌ Error: The path '{path}' does not exist.[/bold red]")
         return
 
-    # INFO level for standard feedback
-    logging.info(f"📦 Organizing: {path.resolve()}")
+    # 1. Get the list of files first (so we know the total count)
+    # We filter out directories and hidden files like .DS_Store
+    files = [f for f in path.iterdir() if f.is_file() and not f.name.startswith('.')]
 
-    for item in path.iterdir():
-        if item.is_file() and not item.name.startswith('.'):
-            _move_file(item, path)
+    if not files:
+        console.print("[yellow]⚠️  This folder is empty. Nothing to do![/yellow]")
+        return
 
-def _move_file(file_path: Path, root_path: Path) -> None:
-    extension = file_path.suffix.lower()
-    destination_folder_name = "Misc"
+    # Define our rules
+    EXTENSIONS = {
+        "Images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".heic"],
+        "Documents": [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".md", ".csv"],
+        "Audio": [".mp3", ".wav", ".aac", ".flac"],
+        "Video": [".mp4", ".mov", ".avi", ".mkv"],
+        "Archives": [".zip", ".tar", ".gz", ".rar"],
+        "Code": [".py", ".js", ".html", ".css", ".json", ".cpp"]
+    }
 
-    for folder_name, extensions in EXTENSION_MAP.items():
-        if extension in extensions:
-            destination_folder_name = folder_name
-            break
+    # 2. The Loop (Wrapped in 'track' for the progress bar)
+    # The 'description' text appears next to the bar
+    for file in track(files, description="[cyan]🧹 Sweeping up files..."):
 
-    target_folder = root_path / destination_folder_name
-    target_folder.mkdir(exist_ok=True)
+        file_extension = file.suffix.lower()
+        destination_folder = "Misc"
 
-    destination_file = target_folder / file_path.name
+        # Find the matching category
+        for category, exts in EXTENSIONS.items():
+            if file_extension in exts:
+                destination_folder = category
+                break
 
-    # DEBUG level: The user doesn't need to see every single file move
-    # unless they are troubleshooting.
-    logging.debug(f"   -> Moving {file_path.name} to {destination_folder_name}/")
+        # Create the folder if it doesn't exist
+        target_dir = path / destination_folder
+        target_dir.mkdir(exist_ok=True)
 
-    shutil.move(str(file_path), str(destination_file))
+        # Move the file
+        try:
+            shutil.move(str(file), str(target_dir / file.name))
+        except Exception as e:
+            console.print(f"[red]Failed to move {file.name}: {e}[/red]")
+
+    console.print(f"[bold green]✨ Done! Organized {len(files)} files.[/bold green]")
