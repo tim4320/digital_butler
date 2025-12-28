@@ -3,10 +3,11 @@ from bs4 import BeautifulSoup
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
+from butler import voice  # <--- Link to the Voice Module
 
 console = Console()
 
-def get_top_stories(limit: int = 5) -> None:
+def get_top_stories(limit: int = 5, read_aloud: bool = False) -> None:
     url = "https://news.ycombinator.com/"
 
     with console.status("[bold yellow]Fetching intelligence from the web..."):
@@ -19,24 +20,31 @@ def get_top_stories(limit: int = 5) -> None:
             soup = BeautifulSoup(response.text, "html.parser")
             story_spans = soup.select(".titleline > a")
 
-            # Build a Markdown string
             md_content = ""
+
+            # If reading aloud, give an intro
+            if read_aloud:
+                voice.speak(f"Here are the top {limit} stories for today.")
 
             for i, story in enumerate(story_spans[:limit], 1):
                 title = story.get_text()
                 raw_link = story['href']
 
-                # Link Logic
+                # Fix relative URLs
                 if raw_link.startswith("http"):
                     link = raw_link
                 else:
                     link = f"https://news.ycombinator.com/{raw_link}"
 
-                # Add to markdown string
                 md_content += f"**{i}. {title}**\n"
                 md_content += f"[link={link}]🔗 Click to Open[/link]\n\n"
 
-            # Render it nicely
+                # --- THE INTEGRATION ---
+                if read_aloud:
+                    # Speak just the title
+                    voice.speak(f"Story {i}: {title}")
+                # -----------------------
+
             md = Markdown(md_content)
             console.print(Panel(md, title="📰 DAILY BRIEFING", border_style="yellow"))
 

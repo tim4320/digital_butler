@@ -11,6 +11,7 @@ from butler import briefing
 from butler import brain
 from butler import tasks   # Option A: Database
 from butler import netsec  # Option B: Port Scanner
+from butler import voice   # Option C: Text-to-Speech
 
 def main(argv: Sequence[str] = None) -> int:
     # 1. Initialize the Database immediately
@@ -45,6 +46,8 @@ def main(argv: Sequence[str] = None) -> int:
     # 4. News (Hacker News Scraper)
     news_parser = subparsers.add_parser("news", help="Get top headlines")
     news_parser.add_argument("--limit", type=int, default=5, help="How many stories")
+    # NEW FLAG
+    news_parser.add_argument("--read", action="store_true", help="Read stories out loud")
 
     # 5. Memory (JSON Brain)
     rem_parser = subparsers.add_parser("remember", help="Save a fact")
@@ -71,6 +74,11 @@ def main(argv: Sequence[str] = None) -> int:
     scan_parser = subparsers.add_parser("scan", help="Scan network ports")
     scan_parser.add_argument("target", help="IP address or Domain")
 
+    # 8. Voice (Text-to-Speech) - NEW
+    speak_parser = subparsers.add_parser("speak", help="Text-to-Speech")
+    speak_parser.add_argument("text", help="What to say")
+    speak_parser.add_argument("--voice", default="Samantha", help="Voice name (e.g. Fred, Alex)")
+
     # --- PARSING ---
     args = parser.parse_args(argv)
 
@@ -85,7 +93,9 @@ def main(argv: Sequence[str] = None) -> int:
     elif args.command == "check":
         web.check_site(args.url)
     elif args.command == "news":
-        briefing.get_top_stories(args.limit)
+        briefing.get_top_stories(args.limit, args.read) # Pass the new flag
+    elif args.command == "speak":
+        voice.speak(args.text, args.voice)
 
     # Memory Routing
     elif args.command == "remember":
