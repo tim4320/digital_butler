@@ -1,15 +1,15 @@
 import sys
 import argparse
-import logging  # <--- NEW
+import logging
 from typing import Sequence
+# Import BOTH modules now
 from butler import tidy
+from butler import system  # <--- NEW
 
 def main(argv: Sequence[str] = None) -> int:
     parser = argparse.ArgumentParser(
         description="Digital Butler: Your personal automation tool."
     )
-
-    # <--- NEW: Add a verbose flag (global option)
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",
@@ -22,22 +22,20 @@ def main(argv: Sequence[str] = None) -> int:
     tidy_parser = subparsers.add_parser("tidy", help="Organize files in a directory")
     tidy_parser.add_argument("--path", required=True, help="The folder to clean up")
 
+    # --- Command: Status (NEW) ---
+    # No arguments needed for this one!
+    subparsers.add_parser("status", help="Show system health (CPU/RAM)")
+
     args = parser.parse_args(argv)
 
-    # <--- NEW: Configure the Logger based on the flag
     log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(level=log_level, format="%(message)s")
 
-    logging.basicConfig(
-        level=log_level,
-        format="%(message)s", # Simple format for now
-        # format="%(asctime)s - %(levelname)s - %(message)s", # Pro format (try this later)
-    )
-
-    # We use logging.debug for stuff only developers care about
-    logging.debug(f"🔧 Debug Mode Enabled. Arguments: {args}")
-
+    # Router
     if args.command == "tidy":
         tidy.organize_directory(args.path)
+    elif args.command == "status":  # <--- NEW
+        system.report_status()
     else:
         parser.print_help()
 
