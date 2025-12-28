@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/butler/__init__.py
+src/butler/main.py
+src/butler/tidy.py
+src/digital_butler.egg-info/PKG-INFO
+src/digital_butler.egg-info/SOURCES.txt
+src/digital_butler.egg-info/dependency_links.txt
+src/digital_butler.egg-info/entry_points.txt
+src/digital_butler.egg-info/top_level.txt

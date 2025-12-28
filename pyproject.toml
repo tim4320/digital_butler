@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "digital_butler"
+version = "0.1.0"
+description = "My personal automation assistant"
+requires-python = ">=3.7"
+dependencies = []
+
+[project.scripts]
+# This acts as a shortcut:
+# When you type "butler" in the terminal, run the function "main" inside "src/butler/main.py"
+butler = "butler.main:main"

@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: digital_butler
+Version: 0.1.0
+Summary: My personal automation assistant
+Requires-Python: >=3.7
