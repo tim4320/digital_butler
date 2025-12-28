@@ -1,7 +1,7 @@
 import sys
 import argparse
+import logging  # <--- NEW
 from typing import Sequence
-# Import our new module
 from butler import tidy
 
 def main(argv: Sequence[str] = None) -> int:
@@ -9,22 +9,36 @@ def main(argv: Sequence[str] = None) -> int:
         description="Digital Butler: Your personal automation tool."
     )
 
-    # Create a sub-command manager
+    # <--- NEW: Add a verbose flag (global option)
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show detailed debug information"
+    )
+
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # --- Command: Tidy ---
-    # This adds 'tidy' as a valid command
     tidy_parser = subparsers.add_parser("tidy", help="Organize files in a directory")
-    # This adds the --path argument to the tidy command
     tidy_parser.add_argument("--path", required=True, help="The folder to clean up")
 
     args = parser.parse_args(argv)
 
-    # Router: Decide which function to run based on the command
+    # <--- NEW: Configure the Logger based on the flag
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+
+    logging.basicConfig(
+        level=log_level,
+        format="%(message)s", # Simple format for now
+        # format="%(asctime)s - %(levelname)s - %(message)s", # Pro format (try this later)
+    )
+
+    # We use logging.debug for stuff only developers care about
+    logging.debug(f"🔧 Debug Mode Enabled. Arguments: {args}")
+
     if args.command == "tidy":
         tidy.organize_directory(args.path)
     else:
-        # If no command is provided, show help
         parser.print_help()
 
     return 0
