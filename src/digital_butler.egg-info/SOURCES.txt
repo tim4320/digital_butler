@@ -1,9 +1,11 @@
 README.md
 pyproject.toml
 src/butler/__init__.py
+src/butler/ai.py
 src/butler/brain.py
 src/butler/briefing.py
 src/butler/gitview.py
+src/butler/gui.py
 src/butler/main.py
 src/butler/netsec.py
 src/butler/system.py
