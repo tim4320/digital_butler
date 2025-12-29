@@ -86,7 +86,7 @@ class DigitalButlerApp(App):
             self.update_output("Scanning local network... (This may take a moment)")
             # In a real app, we'd run this in a thread to not freeze the UI
             # For now, we just run it directly
-            self.run_and_display(lambda: netsec.scan_target("192.168.1.1"))
+            self.run_and_display(lambda: netsec.scan_target("192.168.2.1"))
 
     def run_and_display(self, func):
         """Helper to capture print() output and show it in the UI."""
@@ -114,7 +114,7 @@ class DigitalButlerApp(App):
         result_text = Text.from_ansi(capture.getvalue())
 
         self.update_output(result_text)
-        
+
     def update_output(self, text: str):
         """Updates the text in the main window."""
         log_widget = self.query_one("#output_log", Static)
