@@ -14,6 +14,7 @@ from butler import netsec  # Option B: Port Scanner
 from butler import voice   # Option C: Text-to-Speech
 from butler import gitview # Option D: Git History Viewer
 from butler import ai  # AI Module
+from butler import payload  # Payload Generator
 
 def main(argv: Sequence[str] = None) -> int:
     # 1. Initialize the Database immediately
@@ -91,6 +92,20 @@ def main(argv: Sequence[str] = None) -> int:
     git_parser = subparsers.add_parser("gitview", help="View git history")
     git_parser.add_argument("--limit", type=int, default=10, help="Number of commits to show")
 
+    # 10. Payload (Flipper Zero Payload Generator) - NEW
+    # Flipper Zero Payloads
+    payload_parser = subparsers.add_parser("payload", help="Generate Flipper Scripts")
+    payload_sub = payload_parser.add_subparsers(dest="payload_type")
+
+    payload_sub.add_parser("rickroll", help="Generate prank script")
+
+    cmd_parser = payload_sub.add_parser("cmd", help="Generate command script")
+    cmd_parser.add_argument("text", type=str)
+
+    wifi_parser = payload_sub.add_parser("wifi", help="Generate Wi-Fi script")
+    wifi_parser.add_argument("ssid", help="Network Name")
+    wifi_parser.add_argument("password", help="Password")
+
     # --- PARSING ---
     args = parser.parse_args(argv)
 
@@ -117,6 +132,10 @@ def main(argv: Sequence[str] = None) -> int:
             briefing.get_smart_briefing(args.limit, args.read)
         else:
             briefing.get_top_stories(args.limit, args.read)
+    elif args.command == "payload":
+        if args.payload_type == "rickroll": payload.generate_rickroll()
+        elif args.payload_type == "cmd": payload.generate_terminal_command(args.text)
+        elif args.payload_type == "wifi": payload.generate_wifi_grabber(args.ssid, args.password)
 
     # Memory Routing
     elif args.command == "remember":
