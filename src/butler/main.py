@@ -48,6 +48,7 @@ def main(argv: Sequence[str] = None) -> int:
     # 4. News (Hacker News Scraper)
     news_parser = subparsers.add_parser("news", help="Get top headlines")
     news_parser.add_argument("--limit", type=int, default=5, help="How many stories")
+    news_parser.add_argument("--smart", action="store_true", help="Use AI to summarize")
 
 
     ai_parser = subparsers.add_parser("ask", help="Ask local AI a question")
@@ -111,6 +112,11 @@ def main(argv: Sequence[str] = None) -> int:
         gitview.get_git_history(args.limit)
     elif args.command == "ask":
         ai.ask_local_brain(args.prompt)
+    elif args.command == "news":
+        if args.smart:
+            briefing.get_smart_briefing(args.limit, args.read)
+        else:
+            briefing.get_top_stories(args.limit, args.read)
 
     # Memory Routing
     elif args.command == "remember":

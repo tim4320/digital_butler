@@ -42,3 +42,18 @@ def ask_local_brain(prompt: str, model: str = "llama3.2"):
     except requests.exceptions.ConnectionError:
         console.print("[bold red]❌ Error: Could not connect to Ollama.[/bold red]")
         console.print("[yellow]Make sure the Ollama app is running in the background![/yellow]")
+
+    def generate_text(prompt: str, model: str = "llama3.2") -> str:
+
+     """ Returns the raw string response from Ollama (for internal use).
+    """
+    url = "http://localhost:11434/api/generate"
+    payload = {"model": model, "prompt": prompt, "stream": False}
+
+    try:
+        response = requests.post(url, json=payload, timeout=60)
+        if response.status_code == 200:
+            return response.json().get("response", "")
+    except:
+        return "I am unable to process the data right now, sir."
+    return "Error contacting Neural Engine."
