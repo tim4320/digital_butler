@@ -1,61 +1,42 @@
+import os
 import subprocess
-import sys
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
 
 console = Console()
 
-def get_git_history(limit: int = 10):
+def show_activity(repo_path="."):
     """
-    Fetches the git log and renders it as a dashboard.
+    Shows the last 5 git commits in a formatted table.
     """
     try:
-        # 1. Run the git command
-        # We use a custom format: Hash|Author|Time|Message
-        # %h = short hash, %an = author name, %ar = relative date, %s = subject
-        cmd = [
-            "git", "log",
-            f"-n {limit}",
-            "--pretty=format:%h|%an|%ar|%s"
-        ]
+        # Verify it is a git repo
+        if not os.path.exists(os.path.join(repo_path, ".git")):
+            console.print("[bold red]❌ Current folder is not a git repository.[/bold red]")
+            return
 
-        # Capture the output
-        result = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-        output = result.decode("utf-8").strip()
+        # Fetch the log: Hash | Author | Time | Message
+        cmd = ["git", "log", "-n", "5", "--pretty=format:%h|%an|%ar|%s"]
+
+        # Run the command safely
+        output = subprocess.check_output(cmd, cwd=repo_path).decode("utf-8")
+
+        # Build the Table
+        table = Table(title="Recent Git Activity")
+        table.add_column("Commit", style="cyan", no_wrap=True)
+        table.add_column("Author", style="magenta")
+        table.add_column("When", style="green")
+        table.add_column("Message", style="white")
+
+        # Populate rows
+        for line in output.strip().split("\n"):
+            parts = line.split("|")
+            if len(parts) >= 4:
+                table.add_row(parts[0], parts[1], parts[2], parts[3])
+
+        console.print(table)
 
     except subprocess.CalledProcessError:
-        console.print("[bold red]❌ Error: Not a valid git repository (or git is missing).[/bold red]")
-        return
-    except FileNotFoundError:
-        console.print("[bold red]❌ Error: Git is not installed on this system.[/bold red]")
-        return
-
-    if not output:
-        console.print("[yellow]⚠️  No commit history found.[/yellow]")
-        return
-
-    # 2. Build the UI
-    table = Table(title="📜 Project Timeline", box=None)
-
-    table.add_column("Hash", style="cyan", no_wrap=True)
-    table.add_column("When", style="green")
-    table.add_column("Author", style="blue")
-    table.add_column("Message", style="white bold")
-
-    # 3. Parse the data
-    # We split the raw text block into lines, then split lines by "|"
-    lines = output.split("\n")
-
-    for line in lines:
-        try:
-            # We split only 3 times to avoid breaking messages that contain pipes
-            short_hash, author, date, message = line.split("|", 3)
-
-            # Add to table
-            table.add_row(short_hash, date, author, message)
-        except ValueError:
-            continue
-
-    # 4. Show it
-    console.print(Panel(table, border_style="cyan"))
+        console.print("[bold red]❌ Error:[/bold red] Could not read git log.")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/bold red] {e}")
