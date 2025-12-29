@@ -8,6 +8,7 @@ src/butler/gitview.py
 src/butler/gui.py
 src/butler/main.py
 src/butler/netsec.py
+src/butler/payload.py
 src/butler/system.py
 src/butler/tasks.py
 src/butler/tidy.py

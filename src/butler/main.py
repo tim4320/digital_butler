@@ -1,98 +1,58 @@
-import sys
 import argparse
-import logging
-from typing import Sequence
+import sys
+# Import ALL modules including payload, ai, and gui
+from butler import system, briefing, tasks, netsec, gitview, voice, gui, ai, payload
 
-# --- IMPORTS FOR ALL SKILLS ---
-from butler import tidy
-from butler import system
-from butler import web
-from butler import briefing
-from butler import brain
-from butler import tasks   # Option A: Database
-from butler import netsec  # Option B: Port Scanner
-from butler import voice   # Option C: Text-to-Speech
-from butler import gitview # Option D: Git History Viewer
-from butler import ai  # AI Module
-from butler import payload  # Payload Generator
+def main():
+    parser = argparse.ArgumentParser(description="Digital Butler - CLI Tool")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-def main(argv: Sequence[str] = None) -> int:
-    # 1. Initialize the Database immediately
-    # This ensures the .db file exists before we try to use it
-    tasks.init_db()
+    # --- 1. SYSTEM COMMANDS ---
+    subparsers.add_parser("tidy", help="Organize Desktop folder")
+    subparsers.add_parser("status", help="Show system status")
 
-    # 2. Setup the Argument Parser
-    parser = argparse.ArgumentParser(
-        description="Digital Butler: Your personal automation tool."
-    )
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Show detailed debug information"
-    )
+    # Check (Fixed: No --url flag required anymore)
+    check_parser = subparsers.add_parser("check", help="Check security of a URL")
+    check_parser.add_argument("target", help="IP or URL to check")
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    # News
+    news_parser = subparsers.add_parser("news", help="Fetch tech news")
+    news_parser.add_argument("--limit", type=int, default=5)
+    news_parser.add_argument("--read", action="store_true")
+    news_parser.add_argument("--smart", action="store_true")
 
-    # --- COMMANDS ---
+    # --- 2. MEMORY COMMANDS ---
+    subparsers.add_parser("remember", help="Save clipboard")
+    subparsers.add_parser("recall", help="Show memory")
+    subparsers.add_parser("forget", help="Clear memory")
 
-    # 1. Tidy (File Organizer)
-    tidy_parser = subparsers.add_parser("tidy", help="Organize files")
-    tidy_parser.add_argument("--path", required=True, help="The folder to clean up")
-
-    # 2. Status (System Monitor)
-    subparsers.add_parser("status", help="Show system health")
-
-    # 3. Check (Website Pinger)
-    check_parser = subparsers.add_parser("check", help="Check website status")
-    check_parser.add_argument("--url", required=True, help="URL to ping")
-
-    # 4. News (Hacker News Scraper)
-    news_parser = subparsers.add_parser("news", help="Get top headlines")
-    news_parser.add_argument("--limit", type=int, default=5, help="How many stories")
-    news_parser.add_argument("--smart", action="store_true", help="Use AI to summarize")
-
-
-    ai_parser = subparsers.add_parser("ask", help="Ask local AI a question")
-    ai_parser.add_argument("prompt", type=str, help="The question you want to ask")
-
-    # NEW FLAG
-    news_parser.add_argument("--read", action="store_true", help="Read stories out loud")
-
-    # 5. Memory (JSON Brain)
-    rem_parser = subparsers.add_parser("remember", help="Save a fact")
-    rem_parser.add_argument("key", help="What to remember")
-    rem_parser.add_argument("value", help="The content")
-
-    rec_parser = subparsers.add_parser("recall", help="Retrieve facts")
-    rec_parser.add_argument("key", nargs='?', help="Specific fact to look up")
-
-    for_parser = subparsers.add_parser("forget", help="Delete a fact")
-    for_parser.add_argument("key", help="Fact to delete")
-
-    # 6. Tasks (SQLite Database) - NEW
-    add_parser = subparsers.add_parser("add", help="Add a new task")
-    add_parser.add_argument("description", help="The task description")
+    # --- 3. TASK COMMANDS ---
+    add_parser = subparsers.add_parser("add", help="Add task")
+    add_parser.add_argument("task", help="Task text")
 
     list_parser = subparsers.add_parser("list", help="List tasks")
-    list_parser.add_argument("--all", action="store_true", help="Show completed tasks too")
+    list_parser.add_argument("--all", action="store_true")
 
-    done_parser = subparsers.add_parser("done", help="Complete a task")
-    done_parser.add_argument("id", type=int, help="The ID of the task to finish")
+    done_parser = subparsers.add_parser("done", help="Complete task")
+    done_parser.add_argument("task_id", type=int)
 
-    # 7. NetSec (Port Scanner) - NEW
-    scan_parser = subparsers.add_parser("scan", help="Scan network ports")
-    scan_parser.add_argument("target", help="IP address or Domain")
+    # --- 4. NETWORK COMMANDS ---
+    scan_parser = subparsers.add_parser("scan", help="Scan an IP")
+    scan_parser.add_argument("target", help="Target IP")
 
-    # 8. Voice (Text-to-Speech) - NEW
-    speak_parser = subparsers.add_parser("speak", help="Text-to-Speech")
-    speak_parser.add_argument("text", help="What to say")
-    speak_parser.add_argument("--voice", default="Samantha", help="Voice name (e.g. Fred, Alex)")
+    # --- 5. UTILITY COMMANDS ---
+    speak_parser = subparsers.add_parser("speak", help="TTS")
+    speak_parser.add_argument("text", help="Text to speak")
 
-    # 9. GitView (Git History Viewer) - NEW
-    git_parser = subparsers.add_parser("gitview", help="View git history")
-    git_parser.add_argument("--limit", type=int, default=10, help="Number of commits to show")
+    subparsers.add_parser("gitview", help="Git activity")
 
-    # 10. Payload (Flipper Zero Payload Generator) - NEW
+    # Mission Control (This was missing!)
+    subparsers.add_parser("mission", help="Launch Dashboard")
+
+    # AI Brain
+    ai_parser = subparsers.add_parser("ask", help="Ask AI")
+    ai_parser.add_argument("prompt", type=str)
+
     # Flipper Zero Payloads
     payload_parser = subparsers.add_parser("payload", help="Generate Flipper Scripts")
     payload_sub = payload_parser.add_subparsers(dest="payload_type")
@@ -106,61 +66,35 @@ def main(argv: Sequence[str] = None) -> int:
     wifi_parser.add_argument("ssid", help="Network Name")
     wifi_parser.add_argument("password", help="Password")
 
-    # --- PARSING ---
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
 
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=log_level, format="%(message)s")
+    # --- ROUTING ---
+    if args.command == "tidy": system.organize_desktop()
+    elif args.command == "status": system.report_status()
+    elif args.command == "check": netsec.check_safety(args.target)
+    elif args.command == "news":
+        if args.smart: briefing.get_smart_briefing(args.limit, args.read)
+        else: briefing.get_top_stories(args.limit, args.read)
+    elif args.command == "remember": tasks.remember_clipboard()
+    elif args.command == "recall": tasks.recall_memory()
+    elif args.command == "forget": tasks.forget_memory()
+    elif args.command == "add": tasks.add_task(args.task)
+    elif args.command == "list": tasks.list_tasks(args.all)
+    elif args.command == "done": tasks.complete_task(args.task_id)
+    elif args.command == "scan": netsec.scan_target(args.target)
+    elif args.command == "speak": voice.speak(args.text)
+    elif args.command == "gitview": gitview.show_activity(".")
+    elif args.command == "mission":
+        # Launch GUI
+        app = gui.DigitalButlerApp()
+        app.run()
 
-    # --- ROUTING (The Switchboard) ---
-    if args.command == "tidy":
-        tidy.organize_directory(args.path)
-    elif args.command == "status":
-        system.report_status()
-    elif args.command == "check":
-        web.check_site(args.url)
-    elif args.command == "news":
-        briefing.get_top_stories(args.limit, args.read) # Pass the new flag
-    elif args.command == "speak":
-        voice.speak(args.text, args.voice)
-    elif args.command == "gitview":
-        gitview.get_git_history(args.limit)
-    elif args.command == "ask":
-        ai.ask_local_brain(args.prompt)
-    elif args.command == "news":
-        if args.smart:
-            briefing.get_smart_briefing(args.limit, args.read)
-        else:
-            briefing.get_top_stories(args.limit, args.read)
+    # Advanced Modules
+    elif args.command == "ask": ai.ask_local_brain(args.prompt)
     elif args.command == "payload":
         if args.payload_type == "rickroll": payload.generate_rickroll()
         elif args.payload_type == "cmd": payload.generate_terminal_command(args.text)
         elif args.payload_type == "wifi": payload.generate_wifi_grabber(args.ssid, args.password)
 
-    # Memory Routing
-    elif args.command == "remember":
-        brain.remember(args.key, args.value)
-    elif args.command == "recall":
-        brain.recall(args.key)
-    elif args.command == "forget":
-        brain.forget(args.key)
-
-    # Task Routing (Database)
-    elif args.command == "add":
-        tasks.add_task(args.description)
-    elif args.command == "list":
-        tasks.list_tasks(args.all)
-    elif args.command == "done":
-        tasks.complete_task(args.id)
-
-    # NetSec Routing (Scanner)
-    elif args.command == "scan":
-        netsec.scan_target(args.target)
-
-    else:
-        parser.print_help()
-
-    return 0
-
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
