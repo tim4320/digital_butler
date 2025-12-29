@@ -13,6 +13,7 @@ from butler import tasks   # Option A: Database
 from butler import netsec  # Option B: Port Scanner
 from butler import voice   # Option C: Text-to-Speech
 from butler import gitview # Option D: Git History Viewer
+from butler import ai  # AI Module
 
 def main(argv: Sequence[str] = None) -> int:
     # 1. Initialize the Database immediately
@@ -47,6 +48,11 @@ def main(argv: Sequence[str] = None) -> int:
     # 4. News (Hacker News Scraper)
     news_parser = subparsers.add_parser("news", help="Get top headlines")
     news_parser.add_argument("--limit", type=int, default=5, help="How many stories")
+
+
+    ai_parser = subparsers.add_parser("ask", help="Ask local AI a question")
+    ai_parser.add_argument("prompt", type=str, help="The question you want to ask")
+
     # NEW FLAG
     news_parser.add_argument("--read", action="store_true", help="Read stories out loud")
 
@@ -103,6 +109,8 @@ def main(argv: Sequence[str] = None) -> int:
         voice.speak(args.text, args.voice)
     elif args.command == "gitview":
         gitview.get_git_history(args.limit)
+    elif args.command == "ask":
+        ai.ask_local_brain(args.prompt)
 
     # Memory Routing
     elif args.command == "remember":
